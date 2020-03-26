@@ -1,0 +1,36 @@
+version: '{branch}-{build}'
+
+environment:
+  matrix:
+    - SOURCEMOD: 1.9
+    - SOURCEMOD: 1.10
+    - SOURCEMOD: 1.11
+
+matrix:
+  allow_failures:
+    - SOURCEMOD: 1.11
+
+install:
+  - ps: Invoke-WebRequest "https://www.sourcemod.net/latest.php?version=$env:SOURCEMOD&os=windows" -OutFile "sourcemod-$env:SOURCEMOD-windows.zip"
+  - ps: Expand-Archive -Path "sourcemod-$env:SOURCEMOD-windows.zip" -DestinationPath "./"
+  - ps: cd addons\sourcemod\scripting\include\
+  - ps: Invoke-WebRequest "https://bitbucket.org/GoD_Tony/updater/raw/53ebb3e27e5a43bc46dc52dc0de76ac2fb48cd9e/include/updater.inc" -OutFile "updater.inc"
+  - ps: cd ..
+
+build: off
+
+test_script:
+  - cmd: spcomp votecrouch.sp -E -i%CD% -v0
+
+after_test:
+  - cmd: cd %APPVEYOR_BUILD_FOLDER%
+  - cmd: 7z a fun.plugin-only.zip %APPVEYOR_BUILD_FOLDER%\plugins\funvotes\*.smx
+  - cmd: 7z a fun.plugin-only.tar %APPVEYOR_BUILD_FOLDER%\plugins\funvotes\*.smx
+  - cmd: 7z a fun.plugin-only.tar.gz fun.plugin-only.tar
+  
+artifacts:
+  - path: fun.plugin-only.zip
+    name: fun-zip
+
+  - path: fun.plugin-only.tar.gz
+    name: fun-tar.gz
